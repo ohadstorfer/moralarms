@@ -45,13 +45,20 @@ export async function createTask(input: {
   name: string;
   start_time: string;
   repeat_every_minutes: number;
+  notification_text?: string | null;
 }): Promise<Task> {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error('Not signed in');
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { data, error } = await supabase
     .from('tasks')
-    .insert({ ...input, timezone, active: true, user_id: userData.user.id })
+    .insert({
+      ...input,
+      notification_text: input.notification_text?.trim() || null,
+      timezone,
+      active: true,
+      user_id: userData.user.id,
+    })
     .select()
     .single();
   if (error) throw error;

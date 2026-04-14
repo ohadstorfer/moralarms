@@ -84,9 +84,13 @@ Deno.serve(async (_req) => {
   const staleEndpoints: string[] = [];
 
   for (const t of dueTasks) {
+    const customBody =
+      typeof t.notification_text === 'string' && t.notification_text.trim()
+        ? t.notification_text
+        : 'Tap to mark done';
     const payload = JSON.stringify({
       title: t.name,
-      body: 'Tap to mark done',
+      body: customBody,
       url: '/',
       tag: `task-${t.id}`,
     });

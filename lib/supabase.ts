@@ -20,4 +20,5 @@ export type Task = {
   timezone: string;
   active: boolean;
   created_at: string;
+  notification_text: string | null;
 };

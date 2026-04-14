@@ -9,6 +9,7 @@ export default function EditTask() {
   const router = useRouter();
   const [task, setTask] = useState<Task | null>(null);
   const [name, setName] = useState('');
+  const [notifText, setNotifText] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [interval, setInterval] = useState('30');
   const [unit, setUnit] = useState<'minutes' | 'hours'>('minutes');
@@ -34,6 +35,7 @@ export default function EditTask() {
       if (!t) return;
       setTask(t);
       setName(t.name);
+      setNotifText(t.notification_text ?? '');
       setStartTime(t.start_time.slice(0, 5));
       if (t.repeat_every_minutes % 60 === 0) {
         setInterval(String(t.repeat_every_minutes / 60));
@@ -53,6 +55,7 @@ export default function EditTask() {
     if (!Number.isFinite(n) || n <= 0) return;
     await updateTask(task.id, {
       name: name.trim(),
+      notification_text: notifText.trim() || null,
       start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
       repeat_every_minutes: unit === 'hours' ? n * 60 : n,
     });
@@ -83,6 +86,17 @@ export default function EditTask() {
           value={name}
           onChangeText={setName}
           placeholderTextColor="#8E8E93"
+          editable={ready}
+        />
+
+        <Text style={styles.label}>Notification message</Text>
+        <TextInput
+          style={[styles.input, styles.multiline]}
+          value={notifText}
+          onChangeText={setNotifText}
+          placeholder="Don't forget to do your yoga!"
+          placeholderTextColor="#8E8E93"
+          multiline
           editable={ready}
         />
 
@@ -179,6 +193,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
   },
+  multiline: { minHeight: 72, textAlignVertical: 'top' },
   repeatRow: { flexDirection: 'row', alignItems: 'stretch', width: '100%' },
   repeatInput: { flex: 1, flexShrink: 1, minWidth: 0 },
   unit: {

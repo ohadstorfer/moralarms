@@ -6,6 +6,7 @@ import { createTask } from '../../lib/tasks';
 export default function NewTask() {
   const router = useRouter();
   const [name, setName] = useState('');
+  const [notifText, setNotifText] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [interval, setInterval] = useState('30');
   const [unit, setUnit] = useState<'minutes' | 'hours'>('minutes');
@@ -24,6 +25,7 @@ export default function NewTask() {
         name: name.trim(),
         start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
         repeat_every_minutes: unit === 'hours' ? n * 60 : n,
+        notification_text: notifText.trim() || null,
       });
       router.back();
     } catch (e: any) {
@@ -45,6 +47,16 @@ export default function NewTask() {
         placeholder="Stretching"
         placeholderTextColor="#8E8E93"
         autoFocus
+      />
+
+      <Text style={styles.label}>Notification message</Text>
+      <TextInput
+        style={[styles.input, styles.multiline]}
+        value={notifText}
+        onChangeText={setNotifText}
+        placeholder="Don't forget to do your yoga!"
+        placeholderTextColor="#8E8E93"
+        multiline
       />
 
       <Text style={styles.label}>Start time (HH:MM, 24h)</Text>
@@ -98,6 +110,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
   },
+  multiline: { minHeight: 72, textAlignVertical: 'top' },
   repeatRow: { flexDirection: 'row', alignItems: 'stretch', width: '100%' },
   repeatInput: { flex: 1, flexShrink: 1, minWidth: 0 },
   unit: {
