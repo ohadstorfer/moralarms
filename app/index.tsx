@@ -134,7 +134,7 @@ export default function Home() {
         <Text style={styles.title}>Todo</Text>
         <Text style={styles.dateSubtitle}>{today.display}</Text>
         <View style={{ flex: 1 }} />
-        <Pressable
+        {/* <Pressable
           onPress={async () => {
             await signOut();
             router.replace('/auth');
@@ -142,7 +142,7 @@ export default function Home() {
           hitSlop={10}
         >
           <Text style={styles.signOut}>Sign out</Text>
-        </Pressable>
+        </Pressable> */}
       </View>
 
       <View style={styles.metaRow}>
@@ -246,7 +246,18 @@ const styles = StyleSheet.create({
   sectionHeaderWrap: { paddingTop: 14 },
   sectionDivider: { height: StyleSheet.hairlineWidth, backgroundColor: '#E5E5EA', marginBottom: 10 },
   sectionHeader: { color: '#1C1C1E', fontSize: 22, fontWeight: '700', marginBottom: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingLeft: 4 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingLeft: 4,
+    // @ts-expect-error web-only style
+    userSelect: 'none',
+    // @ts-expect-error web-only style
+    WebkitUserSelect: 'none',
+    // @ts-expect-error web-only style
+    WebkitTouchCallout: 'none',
+  },
   circle: {
     width: 24,
     height: 24,
