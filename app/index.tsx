@@ -18,6 +18,8 @@ const WEEKDAY_MAP: Record<string, number> = {
   Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
 };
 
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 function getLocalToday(): { iso: string; display: string; weekday: number } {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -143,7 +145,9 @@ export default function Home() {
     <View style={styles.root}>
       <View style={styles.titleRow}>
         <Text style={styles.title}>Todo</Text>
-        <Text style={styles.dateSubtitle}>{today.display}</Text>
+        <Text style={styles.dateSubtitle}>
+          {WEEKDAY_NAMES[today.weekday]} {today.display}
+        </Text>
         <View style={{ flex: 1 }} />
         {/* <Pressable
           onPress={async () => {
