@@ -1,15 +1,27 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
+import { lang } from '../lib/i18n';
 
-const DAYS = [
-  { label: 'S', value: 0 },
-  { label: 'M', value: 1 },
-  { label: 'T', value: 2 },
-  { label: 'W', value: 3 },
-  { label: 'T', value: 4 },
-  { label: 'F', value: 5 },
-  { label: 'S', value: 6 },
-];
+const DAYS =
+  lang === 'es'
+    ? [
+        { label: 'D', value: 0 },
+        { label: 'L', value: 1 },
+        { label: 'M', value: 2 },
+        { label: 'M', value: 3 },
+        { label: 'J', value: 4 },
+        { label: 'V', value: 5 },
+        { label: 'S', value: 6 },
+      ]
+    : [
+        { label: 'S', value: 0 },
+        { label: 'M', value: 1 },
+        { label: 'T', value: 2 },
+        { label: 'W', value: 3 },
+        { label: 'T', value: 4 },
+        { label: 'F', value: 5 },
+        { label: 'S', value: 6 },
+      ];
 
 export function WeekdayPicker({
   selected,
