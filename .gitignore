@@ -13,3 +13,5 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 .DS_Store
+supabase/.temp/
+.claude/
