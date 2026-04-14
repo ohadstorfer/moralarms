@@ -17,7 +17,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false },
 });
 
-const GRACE_SECONDS = 90;
+const GRACE_SECONDS = 30;
 
 function localParts(d: Date, tz: string) {
   const fmt = new Intl.DateTimeFormat('en-GB', {
