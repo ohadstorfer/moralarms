@@ -11,7 +11,8 @@ function detectLang(): 'es' | 'en' {
     }
   }
   // return raw.toLowerCase().startsWith('es') ? 'es' : 'en';
-  return  'es' ;
+  // return  'es' ;
+  return raw.toLowerCase().startsWith('es') ? 'es' : 'en';
 }
 
 export const lang: 'es' | 'en' = detectLang();
@@ -43,10 +44,14 @@ const en: Dict = {
   // task form shared
   'task.new_title': 'New Task',
   'task.edit_title': 'Edit Task',
+  'task.new_reminder': 'New reminder',
+  'task.edit_reminder': 'Edit reminder',
+  'task.title': 'Title',
+  'task.note': 'Note',
   'task.name': 'Name',
-  'task.name_placeholder': 'e.g., Stretching',
+  'task.name_placeholder': 'e.g. Stretching',
   'task.notif_message': 'Notification message',
-  'task.notif_placeholder': "e.g., Don't forget to do your yoga!",
+  'task.notif_placeholder': "e.g. Don't forget to do your yoga!",
   'task.start_time': 'Start time',
   'task.start_time_hint': 'Start time (HH:MM, 24h)',
   'task.repeat_on': 'Repeat on',
@@ -68,35 +73,38 @@ const es: Dict = {
   // auth
   'auth.signin': 'Iniciar sesión',
   'auth.signup': 'Registrarse',
-  'auth.create_account': 'Crear cuenta',
+  'auth.create_account': 'Crear una cuenta',
   'auth.email': 'Correo electrónico',
   'auth.password': 'Contraseña',
   'auth.email_placeholder': 'tu@ejemplo.com',
-  'auth.required': 'Introduce el correo y la contraseña.',
-  'auth.generic_error': 'Ha ocurrido un error',
-  'auth.toggle_to_signup': '¿No tienes una cuenta? Regístrate',
-  'auth.toggle_to_signin': '¿Ya tienes una cuenta? Inicia sesión',
+  'auth.required': 'Correo y contraseña son obligatorios.',
+  'auth.generic_error': 'Algo salió mal',
+  'auth.toggle_to_signup': '¿No tienes cuenta? Regístrate',
+  'auth.toggle_to_signin': '¿Ya tienes cuenta? Inicia sesión',
 
   // home
   'home.title': 'Tareas',
   'home.completed': 'Completadas',
-  'home.clear': 'Borrar',
+  'home.clear': 'Limpiar',
   'home.enable_notifications': 'Activar notificaciones',
-  'home.notif_denied': 'Se denegó el permiso para las notificaciones.',
-  'home.push_unsupported':
-    'Las notificaciones push no son compatibles con este navegador. Añade la app a la pantalla de inicio en iOS 16.4 o posterior.',
+  'home.notif_denied': 'Permiso de notificaciones denegado.',
+  'home.push_unsupported': 'Las notificaciones push no son compatibles con este navegador. Añade a la pantalla de inicio en iOS 16.4+.',
   'home.sign_out': 'Cerrar sesión',
 
   // task form shared
   'task.new_title': 'Nueva tarea',
   'task.edit_title': 'Editar tarea',
+  'task.new_reminder': 'Nuevo recordatorio',
+  'task.edit_reminder': 'Editar recordatorio',
+  'task.title': 'Título',
+  'task.note': 'Nota',
   'task.name': 'Nombre',
-  'task.name_placeholder': 'P. ej., Estiramientos',
+  'task.name_placeholder': 'p. ej. Estiramientos',
   'task.notif_message': 'Mensaje de notificación',
-  'task.notif_placeholder': 'P. ej., ¡No olvides hacer yoga!',
+  'task.notif_placeholder': 'p. ej. ¡No olvides hacer yoga!',
   'task.start_time': 'Hora de inicio',
-  'task.start_time_hint': 'Hora de inicio (HH:MM, 24 h)',
-  'task.repeat_on': 'Repetir',
+  'task.start_time_hint': 'Hora de inicio (HH:MM, 24h)',
+  'task.repeat_on': 'Repetir los',
   'task.every_day': 'Todos los días',
   'task.custom': 'Personalizado',
   'task.repeat_every': 'Repetir cada',
@@ -106,9 +114,9 @@ const es: Dict = {
   'task.saving': 'Guardando…',
   'task.cancel': 'Cancelar',
   'task.delete': 'Eliminar',
-  'task.delete_confirm': '¿Seguro que quieres eliminar esta tarea?',
-  'task.invalid_interval': 'Intervalo no válido',
-  'task.save_failed': 'No se pudo guardar',
+  'task.delete_confirm': '¿Eliminar esta tarea?',
+  'task.invalid_interval': 'Intervalo inválido',
+  'task.save_failed': 'Error',
 };
 
 const dict: Dict = lang === 'es' ? es : en;

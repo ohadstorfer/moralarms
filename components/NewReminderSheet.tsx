@@ -1,18 +1,36 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Animated, ScrollView } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getTask, updateTask, deleteTask } from '../../lib/tasks';
-import { Task } from '../../lib/supabase';
-import { WeekdayPicker } from '../../components/WeekdayPicker';
-import { SheetHeader } from '../../components/SheetHeader';
-import { TimeWheelPicker } from '../../components/TimeWheelPicker';
-import { ClockIcon } from '../../components/ClockIcon';
-import { t } from '../../lib/i18n';
+// @ts-expect-error no type defs for react-dom in this project
+import { createPortal } from 'react-dom';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  Animated,
+  PanResponder,
+  Dimensions,
+  Platform,
+} from 'react-native';
 
-export default function EditTask() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const [task, setTask] = useState<Task | null>(null);
+const FIXED_POS = (Platform.OS === 'web' ? 'fixed' : 'absolute') as 'absolute';
+import { createTask } from '../lib/tasks';
+import { WeekdayPicker } from './WeekdayPicker';
+import { SheetHeader } from './SheetHeader';
+import { TimeWheelPicker } from './TimeWheelPicker';
+import { ClockIcon } from './ClockIcon';
+import { t } from '../lib/i18n';
+
+const SCREEN_H = Dimensions.get('window').height;
+const TOP_GAP = 80;
+const SHEET_HEIGHT = SCREEN_H - TOP_GAP;
+const DISMISS_THRESHOLD = SHEET_HEIGHT * 0.25;
+
+type Props = { onClose: () => void; onCreated?: () => void };
+
+export function NewReminderSheet({ onClose, onCreated }: Props) {
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [startTime, setStartTime] = useState('09:00');
@@ -20,12 +38,81 @@ export default function EditTask() {
   const [unit, setUnit] = useState<'minutes' | 'hours'>('minutes');
   const [repeatMode, setRepeatMode] = useState<'daily' | 'custom'>('daily');
   const [days, setDays] = useState<Set<number>>(new Set());
+  const [saving, setSaving] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   const [hh, mm] = startTime.split(':').map((x) => parseInt(x, 10));
   const setTime = (h: number, m: number) => {
     setStartTime(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
   };
+
+  const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
+  const titleRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    let prevOverflow = '';
+    let prevScrollY = 0;
+    if (typeof document !== 'undefined') {
+      prevScrollY = window.scrollY;
+      prevOverflow = document.body.style.overflow;
+      window.scrollTo(0, 0);
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+    Animated.timing(translateY, {
+      toValue: 0,
+      duration: 260,
+      useNativeDriver: true,
+    }).start(() => {
+      const node: any = titleRef.current;
+      if (node && typeof node.focus === 'function') {
+        try {
+          node.focus({ preventScroll: true });
+        } catch {
+          node.focus();
+        }
+      }
+    });
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = prevOverflow;
+        document.documentElement.style.overflow = prevOverflow;
+        window.scrollTo(0, prevScrollY);
+      }
+    };
+  }, [translateY]);
+
+  const animateClose = (after?: () => void) => {
+    Animated.timing(translateY, {
+      toValue: SHEET_HEIGHT,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      after?.();
+      onClose();
+    });
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderMove: (_e, g) => {
+        const next = Math.max(0, g.dy);
+        translateY.setValue(next);
+      },
+      onPanResponderRelease: (_e, g) => {
+        if (g.dy > DISMISS_THRESHOLD || g.vy > 0.8) {
+          animateClose();
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        }
+      },
+    })
+  ).current;
 
   const toggleDay = (d: number) =>
     setDays((prev) => {
@@ -35,93 +122,63 @@ export default function EditTask() {
       return next;
     });
 
-  const close = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/');
-  };
-
-  const fade = useRef(new Animated.Value(0)).current;
-  const slide = useRef(new Animated.Value(12)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fade, { toValue: 1, duration: 180, useNativeDriver: true }),
-      Animated.timing(slide, { toValue: 0, duration: 220, useNativeDriver: true }),
-    ]).start();
-  }, [fade, slide]);
-
-  useEffect(() => {
-    if (!id) return;
-    getTask(id as string).then((tsk) => {
-      if (!tsk) return;
-      setTask(tsk);
-      setTitle(tsk.name);
-      setNote(tsk.notification_text ?? '');
-      setStartTime(tsk.start_time.slice(0, 5));
-      if (tsk.repeat_every_minutes % 60 === 0) {
-        setInterval(String(tsk.repeat_every_minutes / 60));
-        setUnit('hours');
-      } else {
-        setInterval(String(tsk.repeat_every_minutes));
-        setUnit('minutes');
-      }
-      if (tsk.repeat_weekdays && tsk.repeat_weekdays.length > 0 && tsk.repeat_weekdays.length < 7) {
-        setRepeatMode('custom');
-        setDays(new Set(tsk.repeat_weekdays));
-      } else {
-        setRepeatMode('daily');
-        setDays(new Set());
-      }
-    });
-  }, [id]);
-
-  const ready = task !== null;
   const intervalN = parseInt(interval, 10);
-  const canSave = ready && title.trim().length > 0 && Number.isFinite(intervalN) && intervalN > 0;
+  const canSave =
+    title.trim().length > 0 && Number.isFinite(intervalN) && intervalN > 0 && !saving;
 
   async function save() {
-    if (!task || !canSave) return;
-    const weekdays =
-      repeatMode === 'daily' || days.size === 0 || days.size === 7
-        ? null
-        : Array.from(days).sort();
-    await updateTask(task.id, {
-      name: title.trim(),
-      notification_text: note.trim() || null,
-      start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
-      repeat_every_minutes: unit === 'hours' ? intervalN * 60 : intervalN,
-      repeat_weekdays: weekdays,
-    });
-    close();
+    if (!canSave) {
+      if (!Number.isFinite(intervalN) || intervalN <= 0) Alert.alert(t('task.invalid_interval'));
+      return;
+    }
+    setSaving(true);
+    try {
+      const weekdays =
+        repeatMode === 'daily' || days.size === 0 || days.size === 7
+          ? null
+          : Array.from(days).sort();
+      await createTask({
+        name: title.trim(),
+        start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
+        repeat_every_minutes: unit === 'hours' ? intervalN * 60 : intervalN,
+        notification_text: note.trim() || null,
+        repeat_weekdays: weekdays,
+      });
+      animateClose(() => onCreated?.());
+    } catch (e: any) {
+      Alert.alert(t('task.save_failed'), e.message);
+      setSaving(false);
+    }
   }
 
-  async function remove() {
-    if (!task) return;
-    if (typeof window !== 'undefined' && !window.confirm(t('task.delete_confirm'))) return;
-    await deleteTask(task.id);
-    close();
-  }
+  const content = (
+    <View style={styles.root} pointerEvents="box-none">
+      <Pressable style={styles.backdrop} onPress={() => animateClose()} />
+      <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+        <View style={styles.grabberWrap} {...panResponder.panHandlers}>
+          <View style={styles.grabber} />
+        </View>
 
-  return (
-    <Animated.View style={[styles.backdrop, { opacity: fade }]}>
-      <Pressable style={styles.backdropPress} onPress={close} />
-      <Animated.View style={[styles.sheet, { transform: [{ translateY: slide }] }]}>
         <SheetHeader
-          title={t('task.edit_reminder')}
-          onCancel={close}
+          title={t('task.new_reminder')}
+          onCancel={() => animateClose()}
           onSave={save}
           canSave={canSave}
         />
 
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.card}>
             <TextInput
+              ref={titleRef}
               style={[styles.cardInput, styles.titleInput]}
               value={title}
               onChangeText={setTitle}
               placeholder={t('task.title')}
               placeholderTextColor="#8E8E93"
-              editable={ready}
             />
             <View style={styles.cardDivider} />
             <TextInput
@@ -131,16 +188,11 @@ export default function EditTask() {
               placeholder={t('task.note')}
               placeholderTextColor="#8E8E93"
               multiline
-              editable={ready}
             />
           </View>
 
           <Text style={styles.label}>{t('task.start_time')}</Text>
-          <Pressable
-            style={[styles.input, styles.timeRow]}
-            onPress={() => ready && setShowTimePicker(true)}
-            disabled={!ready}
-          >
+          <Pressable style={[styles.input, styles.timeRow]} onPress={() => setShowTimePicker(true)}>
             <ClockIcon size={22} />
             <Text style={styles.timeValue}>{startTime}</Text>
           </Pressable>
@@ -150,7 +202,6 @@ export default function EditTask() {
             <Pressable
               style={[styles.mode, repeatMode === 'daily' && styles.modeOn]}
               onPress={() => setRepeatMode('daily')}
-              disabled={!ready}
             >
               <Text style={[styles.modeText, repeatMode === 'daily' && styles.modeTextOn]}>
                 {t('task.every_day')}
@@ -159,7 +210,6 @@ export default function EditTask() {
             <Pressable
               style={[styles.mode, repeatMode === 'custom' && styles.modeOn]}
               onPress={() => setRepeatMode('custom')}
-              disabled={!ready}
             >
               <Text style={[styles.modeText, repeatMode === 'custom' && styles.modeTextOn]}>
                 {t('task.custom')}
@@ -179,12 +229,10 @@ export default function EditTask() {
               value={interval}
               onChangeText={setInterval}
               keyboardType="number-pad"
-              editable={ready}
             />
             <Pressable
               style={[styles.unit, unit === 'minutes' && styles.unitOn]}
               onPress={() => setUnit('minutes')}
-              disabled={!ready}
             >
               <Text style={[styles.unitText, unit === 'minutes' && styles.unitTextOn]}>
                 {t('task.min')}
@@ -193,17 +241,12 @@ export default function EditTask() {
             <Pressable
               style={[styles.unit, unit === 'hours' && styles.unitOn]}
               onPress={() => setUnit('hours')}
-              disabled={!ready}
             >
               <Text style={[styles.unitText, unit === 'hours' && styles.unitTextOn]}>
                 {t('task.hr')}
               </Text>
             </Pressable>
           </View>
-
-          <Pressable style={styles.delete} onPress={remove} disabled={!ready}>
-            <Text style={[styles.deleteText, !ready && { opacity: 0.4 }]}>{t('task.delete')}</Text>
-          </Pressable>
         </ScrollView>
 
         {showTimePicker && (
@@ -218,36 +261,58 @@ export default function EditTask() {
           </View>
         )}
       </Animated.View>
-    </Animated.View>
+    </View>
   );
+
+  if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    return createPortal(content, document.body);
+  }
+  return content;
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
+  root: {
+    position: FIXED_POS,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  backdropPress: { ...StyleSheet.absoluteFillObject },
+  backdrop: {
+    position: FIXED_POS,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
   sheet: {
-    width: '100%',
-    maxWidth: 480,
-    maxHeight: '90%',
+    position: FIXED_POS,
+    left: 0,
+    right: 0,
+    top: TOP_GAP,
+    bottom: 0,
     backgroundColor: '#F2F2F7',
-    borderRadius: 18,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.25,
     shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 12,
   },
-  scroll: { padding: 16, paddingBottom: 32 },
+  grabberWrap: { paddingTop: 8, paddingBottom: 4, alignItems: 'center' },
+  grabber: { width: 40, height: 5, borderRadius: 3, backgroundColor: '#C7C7CC' },
+  scroll: { padding: 16, paddingBottom: 48 },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   cardInput: {
     color: '#1C1C1E',
@@ -258,8 +323,12 @@ const styles = StyleSheet.create({
     outlineStyle: 'none',
   },
   titleInput: { fontSize: 22, fontWeight: '700', minHeight: 72, paddingVertical: 20 },
-  cardNote: { minHeight: 10, paddingVertical: 0, textAlignVertical: 'top' , paddingTop: 10}, 
-  cardDivider: { height: StyleSheet.hairlineWidth, backgroundColor: '#E5E5EA', marginHorizontal: 16 },
+  cardNote: { minHeight: 20, paddingVertical: 0, textAlignVertical: 'top' , paddingTop:  10},
+  cardDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#E5E5EA',
+    marginHorizontal: 16,
+  },
   label: {
     color: '#8E8E93',
     fontSize: 13,
@@ -332,6 +401,4 @@ const styles = StyleSheet.create({
   modeText: { color: '#1C1C1E', fontWeight: '600', fontSize: 15 },
   modeTextOn: { color: '#FFFFFF' },
   daysWrap: { marginTop: 12, backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12 },
-  delete: { marginTop: 24, padding: 16, borderRadius: 12, alignItems: 'center' },
-  deleteText: { color: '#FF3B30', fontSize: 15, fontWeight: '600' },
 });

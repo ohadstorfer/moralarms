@@ -14,6 +14,7 @@ import { Task } from '../lib/supabase';
 import { enablePush, hasPermission, isPushSupported } from '../lib/push';
 import { signOut } from '../lib/auth';
 import { t, weekdayName } from '../lib/i18n';
+import { NewReminderSheet } from '../components/NewReminderSheet';
 
 const WEEKDAY_MAP: Record<string, number> = {
   Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
@@ -54,6 +55,7 @@ export default function Home() {
   const [pushOn, setPushOn] = useState(false);
   const [today, setToday] = useState(getLocalToday());
   const [loaded, setLoaded] = useState(false);
+  const [showNew, setShowNew] = useState(false);
   const todayIsoRef = useRef(today.iso);
   todayIsoRef.current = today.iso;
 
@@ -161,14 +163,14 @@ export default function Home() {
 
       <View style={styles.metaRow}>
         <Text style={styles.metaText}>{completedCount} {t('home.completed')}</Text>
-        {completedCount > 0 && (
+        {/* {completedCount > 0 && (
           <>
             <Text style={styles.metaText}>  •  </Text>
             <Text style={styles.clearLink} onPress={clearCompleted}>
               {t('home.clear')}
             </Text>
           </>
-        )}
+        )} */}
       </View>
 
       <FlatList
@@ -192,9 +194,13 @@ export default function Home() {
         </Pressable>
       )}
 
-      <Pressable style={styles.fab} onPress={() => router.push('/task/new')}>
+      <Pressable style={styles.fab} onPress={() => setShowNew(true)}>
         <Text style={styles.fabPlus}>+</Text>
       </Pressable>
+
+      {showNew && (
+        <NewReminderSheet onClose={() => setShowNew(false)} onCreated={refresh} />
+      )}
     </View>
   );
 }
