@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createTask } from '../../lib/tasks';
+import { WeekdayPicker } from '../../components/WeekdayPicker';
 
 export default function NewTask() {
   const router = useRouter();
@@ -10,7 +11,17 @@ export default function NewTask() {
   const [startTime, setStartTime] = useState('09:00');
   const [interval, setInterval] = useState('30');
   const [unit, setUnit] = useState<'minutes' | 'hours'>('minutes');
+  const [repeatMode, setRepeatMode] = useState<'daily' | 'custom'>('daily');
+  const [days, setDays] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
+
+  const toggleDay = (d: number) =>
+    setDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      return next;
+    });
 
   async function save() {
     if (!name.trim()) return;
@@ -21,11 +32,16 @@ export default function NewTask() {
     }
     setSaving(true);
     try {
+      const weekdays =
+        repeatMode === 'daily' || days.size === 0 || days.size === 7
+          ? null
+          : Array.from(days).sort();
       await createTask({
         name: name.trim(),
         start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
         repeat_every_minutes: unit === 'hours' ? n * 60 : n,
         notification_text: notifText.trim() || null,
+        repeat_weekdays: weekdays,
       });
       router.back();
     } catch (e: any) {
@@ -44,7 +60,7 @@ export default function NewTask() {
         style={styles.input}
         value={name}
         onChangeText={setName}
-        placeholder="Stretching"
+        placeholder="e.g. Stretching"
         placeholderTextColor="#8E8E93"
         autoFocus
       />
@@ -54,7 +70,7 @@ export default function NewTask() {
         style={[styles.input, styles.multiline]}
         value={notifText}
         onChangeText={setNotifText}
-        placeholder="Don't forget to do your yoga!"
+        placeholder="e.g. Don't forget to do your yoga!"
         placeholderTextColor="#8E8E93"
         multiline
       />
@@ -69,6 +85,31 @@ export default function NewTask() {
         // @ts-expect-error web-only prop
         type="time"
       />
+
+      <Text style={styles.label}>Repeat on</Text>
+      <View style={styles.modeRow}>
+        <Pressable
+          style={[styles.mode, repeatMode === 'daily' && styles.modeOn]}
+          onPress={() => setRepeatMode('daily')}
+        >
+          <Text style={[styles.modeText, repeatMode === 'daily' && styles.modeTextOn]}>
+            Every day
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.mode, repeatMode === 'custom' && styles.modeOn]}
+          onPress={() => setRepeatMode('custom')}
+        >
+          <Text style={[styles.modeText, repeatMode === 'custom' && styles.modeTextOn]}>
+            Custom
+          </Text>
+        </Pressable>
+      </View>
+      {repeatMode === 'custom' && (
+        <View style={styles.daysWrap}>
+          <WeekdayPicker selected={days} onToggle={toggleDay} />
+        </View>
+      )}
 
       <Text style={styles.label}>Repeat every</Text>
       <View style={styles.repeatRow}>
@@ -127,6 +168,19 @@ const styles = StyleSheet.create({
   unitOn: { backgroundColor: '#FF9500' },
   unitText: { color: '#1C1C1E', fontWeight: '600' },
   unitTextOn: { color: '#FFFFFF' },
+  modeRow: { flexDirection: 'row', width: '100%' },
+  mode: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  modeOn: { backgroundColor: '#FF9500' },
+  modeText: { color: '#1C1C1E', fontWeight: '600', fontSize: 15 },
+  modeTextOn: { color: '#FFFFFF' },
+  daysWrap: { marginTop: 12 },
   save: {
     marginTop: 32,
     backgroundColor: '#FF9500',

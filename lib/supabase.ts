@@ -21,4 +21,5 @@ export type Task = {
   active: boolean;
   created_at: string;
   notification_text: string | null;
+  repeat_weekdays: number[] | null;
 };

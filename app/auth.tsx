@@ -5,7 +5,7 @@ import { signIn, signUp } from '../lib/auth';
 
 export default function AuthScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);

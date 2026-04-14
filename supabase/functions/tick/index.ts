@@ -19,6 +19,10 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
 
 const GRACE_SECONDS = 30;
 
+const WEEKDAY_MAP: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+};
+
 function localParts(d: Date, tz: string) {
   const fmt = new Intl.DateTimeFormat('en-GB', {
     timeZone: tz,
@@ -30,10 +34,12 @@ function localParts(d: Date, tz: string) {
     hour12: false,
   });
   const parts = Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
+  const wdName = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(d);
   return {
     date: `${parts.year}-${parts.month}-${parts.day}`,
     hour: parseInt(parts.hour, 10),
     minute: parseInt(parts.minute, 10),
+    weekday: WEEKDAY_MAP[wdName] ?? 0,
   };
 }
 
@@ -48,7 +54,14 @@ Deno.serve(async (_req) => {
 
   const dueTasks: any[] = [];
   for (const t of tasks ?? []) {
-    const { date, hour, minute } = localParts(now, t.timezone);
+    const { date, hour, minute, weekday } = localParts(now, t.timezone);
+    if (
+      Array.isArray(t.repeat_weekdays) &&
+      t.repeat_weekdays.length > 0 &&
+      !t.repeat_weekdays.includes(weekday)
+    ) {
+      continue;
+    }
     const [startH, startM] = (t.start_time as string).split(':').map((x) => parseInt(x, 10));
     const localMinutes = hour * 60 + minute;
     const startMinutes = startH * 60 + startM;

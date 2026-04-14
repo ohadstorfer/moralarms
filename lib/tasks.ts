@@ -10,6 +10,19 @@ function localDateInTz(tz: string): string {
   return fmt.format(new Date());
 }
 
+export function isActiveOn(task: Task, weekday: number): boolean {
+  if (!task.repeat_weekdays || task.repeat_weekdays.length === 0) return true;
+  return task.repeat_weekdays.includes(weekday);
+}
+
+export function localWeekdayInTz(tz: string): number {
+  const name = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(
+    new Date()
+  );
+  const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return map[name] ?? 0;
+}
+
 export async function listTasks(): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
@@ -46,6 +59,7 @@ export async function createTask(input: {
   start_time: string;
   repeat_every_minutes: number;
   notification_text?: string | null;
+  repeat_weekdays?: number[] | null;
 }): Promise<Task> {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error('Not signed in');
@@ -55,6 +69,7 @@ export async function createTask(input: {
     .insert({
       ...input,
       notification_text: input.notification_text?.trim() || null,
+      repeat_weekdays: input.repeat_weekdays ?? null,
       timezone,
       active: true,
       user_id: userData.user.id,

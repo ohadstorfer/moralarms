@@ -9,12 +9,16 @@ import {
   AppState,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { listTasks, listCompletionsToday, markDoneToday, unmarkToday } from '../lib/tasks';
+import { listTasks, listCompletionsToday, markDoneToday, unmarkToday, isActiveOn } from '../lib/tasks';
 import { Task } from '../lib/supabase';
 import { enablePush, hasPermission, isPushSupported } from '../lib/push';
 import { signOut } from '../lib/auth';
 
-function getLocalToday(): { iso: string; display: string } {
+const WEEKDAY_MAP: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+};
+
+function getLocalToday(): { iso: string; display: string; weekday: number } {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: tz,
@@ -25,7 +29,14 @@ function getLocalToday(): { iso: string; display: string } {
   const y = parts.find((p) => p.type === 'year')!.value;
   const m = parts.find((p) => p.type === 'month')!.value;
   const d = parts.find((p) => p.type === 'day')!.value;
-  return { iso: `${y}-${m}-${d}`, display: `${d}/${m}/${y}` };
+  const wdName = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(
+    new Date()
+  );
+  return {
+    iso: `${y}-${m}-${d}`,
+    display: `${d}/${m}/${y}`,
+    weekday: WEEKDAY_MAP[wdName] ?? 0,
+  };
 }
 
 function msUntilNextLocalMidnight(): number {
@@ -158,7 +169,7 @@ export default function Home() {
       </View>
 
       <FlatList
-        data={tasks}
+        data={tasks.filter((t) => isActiveOn(t, today.weekday))}
         keyExtractor={(t) => t.id}
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 120 }}
         renderItem={({ item }) => (

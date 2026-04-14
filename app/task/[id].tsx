@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, Animated } from 'react-na
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getTask, updateTask, deleteTask } from '../../lib/tasks';
 import { Task } from '../../lib/supabase';
+import { WeekdayPicker } from '../../components/WeekdayPicker';
 
 export default function EditTask() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -13,6 +14,16 @@ export default function EditTask() {
   const [startTime, setStartTime] = useState('09:00');
   const [interval, setInterval] = useState('30');
   const [unit, setUnit] = useState<'minutes' | 'hours'>('minutes');
+  const [repeatMode, setRepeatMode] = useState<'daily' | 'custom'>('daily');
+  const [days, setDays] = useState<Set<number>>(new Set());
+
+  const toggleDay = (d: number) =>
+    setDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      return next;
+    });
 
   const close = () => {
     if (router.canGoBack()) router.back();
@@ -44,6 +55,13 @@ export default function EditTask() {
         setInterval(String(t.repeat_every_minutes));
         setUnit('minutes');
       }
+      if (t.repeat_weekdays && t.repeat_weekdays.length > 0 && t.repeat_weekdays.length < 7) {
+        setRepeatMode('custom');
+        setDays(new Set(t.repeat_weekdays));
+      } else {
+        setRepeatMode('daily');
+        setDays(new Set());
+      }
     });
   }, [id]);
 
@@ -53,11 +71,16 @@ export default function EditTask() {
     if (!task) return;
     const n = parseInt(interval, 10);
     if (!Number.isFinite(n) || n <= 0) return;
+    const weekdays =
+      repeatMode === 'daily' || days.size === 0 || days.size === 7
+        ? null
+        : Array.from(days).sort();
     await updateTask(task.id, {
       name: name.trim(),
       notification_text: notifText.trim() || null,
       start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
       repeat_every_minutes: unit === 'hours' ? n * 60 : n,
+      repeat_weekdays: weekdays,
     });
     close();
   }
@@ -94,7 +117,7 @@ export default function EditTask() {
           style={[styles.input, styles.multiline]}
           value={notifText}
           onChangeText={setNotifText}
-          placeholder="Don't forget to do your yoga!"
+          placeholder="e.g. Don't forget to do your yoga!"
           placeholderTextColor="#8E8E93"
           multiline
           editable={ready}
@@ -109,6 +132,33 @@ export default function EditTask() {
           // @ts-expect-error web-only prop
           type="time"
         />
+
+        <Text style={styles.label}>Repeat on</Text>
+        <View style={styles.modeRow}>
+          <Pressable
+            style={[styles.mode, repeatMode === 'daily' && styles.modeOn]}
+            onPress={() => setRepeatMode('daily')}
+            disabled={!ready}
+          >
+            <Text style={[styles.modeText, repeatMode === 'daily' && styles.modeTextOn]}>
+              Every day
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.mode, repeatMode === 'custom' && styles.modeOn]}
+            onPress={() => setRepeatMode('custom')}
+            disabled={!ready}
+          >
+            <Text style={[styles.modeText, repeatMode === 'custom' && styles.modeTextOn]}>
+              Custom
+            </Text>
+          </Pressable>
+        </View>
+        {repeatMode === 'custom' && (
+          <View style={styles.daysWrap}>
+            <WeekdayPicker selected={days} onToggle={toggleDay} />
+          </View>
+        )}
 
         <Text style={styles.label}>Repeat every</Text>
         <View style={styles.repeatRow}>
@@ -210,6 +260,19 @@ const styles = StyleSheet.create({
   unitOn: { backgroundColor: '#FF9500' },
   unitText: { color: '#1C1C1E', fontWeight: '600' },
   unitTextOn: { color: '#FFFFFF' },
+  modeRow: { flexDirection: 'row', width: '100%' },
+  mode: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  modeOn: { backgroundColor: '#FF9500' },
+  modeText: { color: '#1C1C1E', fontWeight: '600', fontSize: 15 },
+  modeTextOn: { color: '#FFFFFF' },
+  daysWrap: { marginTop: 12 },
   save: {
     marginTop: 32,
     backgroundColor: '#FF9500',
