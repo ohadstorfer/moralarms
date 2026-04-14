@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getTask, updateTask, deleteTask } from '../../lib/tasks';
 import { Task } from '../../lib/supabase';
 import { WeekdayPicker } from '../../components/WeekdayPicker';
+import { t } from '../../lib/i18n';
 
 export default function EditTask() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -87,7 +88,7 @@ export default function EditTask() {
 
   async function remove() {
     if (!task) return;
-    if (typeof window !== 'undefined' && !window.confirm('Delete this task?')) return;
+    if (typeof window !== 'undefined' && !window.confirm(t('task.delete_confirm'))) return;
     await deleteTask(task.id);
     close();
   }
@@ -97,13 +98,13 @@ export default function EditTask() {
       <Pressable style={styles.backdropPress} onPress={() => close()} />
       <Animated.View style={[styles.sheet, { transform: [{ translateY: slide }] }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.h}>Edit Task</Text>
+          <Text style={styles.h}>{t('task.edit_title')}</Text>
           <Pressable onPress={() => close()} hitSlop={10}>
-            <Text style={styles.cancel}>Cancel</Text>
+            <Text style={styles.cancel}>{t('task.cancel')}</Text>
           </Pressable>
         </View>
 
-        <Text style={styles.label}>Name</Text>
+        <Text style={styles.label}>{t('task.name')}</Text>
         <TextInput
           style={styles.input}
           value={name}
@@ -112,18 +113,18 @@ export default function EditTask() {
           editable={ready}
         />
 
-        <Text style={styles.label}>Notification message</Text>
+        <Text style={styles.label}>{t('task.notif_message')}</Text>
         <TextInput
           style={[styles.input, styles.multiline]}
           value={notifText}
           onChangeText={setNotifText}
-          placeholder="e.g. Don't forget to do your yoga!"
+          placeholder={t('task.notif_placeholder')}
           placeholderTextColor="#8E8E93"
           multiline
           editable={ready}
         />
 
-        <Text style={styles.label}>Start time</Text>
+        <Text style={styles.label}>{t('task.start_time')}</Text>
         <TextInput
           style={styles.input}
           value={startTime}
@@ -133,7 +134,7 @@ export default function EditTask() {
           type="time"
         />
 
-        <Text style={styles.label}>Repeat on</Text>
+        <Text style={styles.label}>{t('task.repeat_on')}</Text>
         <View style={styles.modeRow}>
           <Pressable
             style={[styles.mode, repeatMode === 'daily' && styles.modeOn]}
@@ -141,7 +142,7 @@ export default function EditTask() {
             disabled={!ready}
           >
             <Text style={[styles.modeText, repeatMode === 'daily' && styles.modeTextOn]}>
-              Every day
+              {t('task.every_day')}
             </Text>
           </Pressable>
           <Pressable
@@ -150,7 +151,7 @@ export default function EditTask() {
             disabled={!ready}
           >
             <Text style={[styles.modeText, repeatMode === 'custom' && styles.modeTextOn]}>
-              Custom
+              {t('task.custom')}
             </Text>
           </Pressable>
         </View>
@@ -160,7 +161,7 @@ export default function EditTask() {
           </View>
         )}
 
-        <Text style={styles.label}>Repeat every</Text>
+        <Text style={styles.label}>{t('task.repeat_every')}</Text>
         <View style={styles.repeatRow}>
           <TextInput
             style={[styles.input, styles.repeatInput]}
@@ -174,14 +175,18 @@ export default function EditTask() {
             onPress={() => setUnit('minutes')}
             disabled={!ready}
           >
-            <Text style={[styles.unitText, unit === 'minutes' && styles.unitTextOn]}>min</Text>
+            <Text style={[styles.unitText, unit === 'minutes' && styles.unitTextOn]}>
+              {t('task.min')}
+            </Text>
           </Pressable>
           <Pressable
             style={[styles.unit, unit === 'hours' && styles.unitOn]}
             onPress={() => setUnit('hours')}
             disabled={!ready}
           >
-            <Text style={[styles.unitText, unit === 'hours' && styles.unitTextOn]}>hr</Text>
+            <Text style={[styles.unitText, unit === 'hours' && styles.unitTextOn]}>
+              {t('task.hr')}
+            </Text>
           </Pressable>
         </View>
 
@@ -190,10 +195,10 @@ export default function EditTask() {
           onPress={save}
           disabled={!ready}
         >
-          <Text style={styles.saveText}>Save</Text>
+          <Text style={styles.saveText}>{t('task.save')}</Text>
         </Pressable>
         <Pressable style={styles.delete} onPress={remove} disabled={!ready}>
-          <Text style={[styles.deleteText, !ready && { opacity: 0.4 }]}>Delete</Text>
+          <Text style={[styles.deleteText, !ready && { opacity: 0.4 }]}>{t('task.delete')}</Text>
         </Pressable>
       </Animated.View>
     </Animated.View>

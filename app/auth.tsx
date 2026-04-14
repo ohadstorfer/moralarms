@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { signIn, signUp } from '../lib/auth';
+import { t } from '../lib/i18n';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function AuthScreen() {
   async function submit() {
     setError(null);
     if (!email.trim() || !password) {
-      setError('Email and password are required.');
+      setError(t('auth.required'));
       return;
     }
     setBusy(true);
@@ -23,7 +24,7 @@ export default function AuthScreen() {
       else await signUp(email.trim(), password);
       router.replace('/');
     } catch (e: any) {
-      setError(e?.message ?? 'Something went wrong');
+      setError(e?.message ?? t('auth.generic_error'));
     } finally {
       setBusy(false);
     }
@@ -33,9 +34,11 @@ export default function AuthScreen() {
     <View style={styles.root}>
       <View style={styles.card}>
         <Text style={styles.title}>Moralarms</Text>
-        <Text style={styles.subtitle}>{mode === 'signin' ? 'Sign in' : 'Create an account'}</Text>
+        <Text style={styles.subtitle}>
+          {mode === 'signin' ? t('auth.signin') : t('auth.create_account')}
+        </Text>
 
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>{t('auth.email')}</Text>
         <TextInput
           style={styles.input}
           value={email}
@@ -43,11 +46,11 @@ export default function AuthScreen() {
           autoCapitalize="none"
           autoComplete="email"
           keyboardType="email-address"
-          placeholder="you@example.com"
+          placeholder={t('auth.email_placeholder')}
           placeholderTextColor="#8E8E93"
         />
 
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>{t('auth.password')}</Text>
         <TextInput
           style={styles.input}
           value={password}
@@ -63,7 +66,9 @@ export default function AuthScreen() {
           {busy ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.submitText}>{mode === 'signin' ? 'Sign in' : 'Sign up'}</Text>
+            <Text style={styles.submitText}>
+              {mode === 'signin' ? t('auth.signin') : t('auth.signup')}
+            </Text>
           )}
         </Pressable>
 
@@ -75,7 +80,7 @@ export default function AuthScreen() {
           style={styles.toggle}
         >
           <Text style={styles.toggleText}>
-            {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+            {mode === 'signin' ? t('auth.toggle_to_signup') : t('auth.toggle_to_signin')}
           </Text>
         </Pressable>
       </View>

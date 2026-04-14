@@ -13,12 +13,11 @@ import { listTasks, listCompletionsToday, markDoneToday, unmarkToday, isActiveOn
 import { Task } from '../lib/supabase';
 import { enablePush, hasPermission, isPushSupported } from '../lib/push';
 import { signOut } from '../lib/auth';
+import { t, weekdayName } from '../lib/i18n';
 
 const WEEKDAY_MAP: Record<string, number> = {
   Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
 };
-
-const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function getLocalToday(): { iso: string; display: string; weekday: number } {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -137,16 +136,16 @@ export default function Home() {
   async function onEnablePush() {
     const r = await enablePush();
     if (r === 'ok') setPushOn(true);
-    else if (r === 'denied') alert('Notifications permission denied.');
-    else alert('Push not supported in this browser. Add to Home Screen on iOS 16.4+.');
+    else if (r === 'denied') alert(t('home.notif_denied'));
+    else alert(t('home.push_unsupported'));
   }
 
   return (
     <View style={styles.root}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>Todo</Text>
+        <Text style={styles.title}>{t('home.title')}</Text>
         <Text style={styles.dateSubtitle}>
-          {WEEKDAY_NAMES[today.weekday]} {today.display}
+          {weekdayName(today.weekday)} {today.display}
         </Text>
         <View style={{ flex: 1 }} />
         {/* <Pressable
@@ -161,12 +160,12 @@ export default function Home() {
       </View>
 
       <View style={styles.metaRow}>
-        <Text style={styles.metaText}>{completedCount} Completed</Text>
+        <Text style={styles.metaText}>{completedCount} {t('home.completed')}</Text>
         {completedCount > 0 && (
           <>
             <Text style={styles.metaText}>  •  </Text>
             <Text style={styles.clearLink} onPress={clearCompleted}>
-              Clear
+              {t('home.clear')}
             </Text>
           </>
         )}
@@ -189,7 +188,7 @@ export default function Home() {
 
       {!pushOn && isPushSupported() && (
         <Pressable style={styles.enableBtn} onPress={onEnablePush}>
-          <Text style={styles.enableText}>Enable notifications</Text>
+          <Text style={styles.enableText}>{t('home.enable_notifications')}</Text>
         </Pressable>
       )}
 
@@ -266,11 +265,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingLeft: 4,
-    // @ts-expect-error web-only style
     userSelect: 'none',
     // @ts-expect-error web-only style
     WebkitUserSelect: 'none',
-    // @ts-expect-error web-only style
     WebkitTouchCallout: 'none',
   },
   circle: {

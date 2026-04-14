@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-nativ
 import { useRouter } from 'expo-router';
 import { createTask } from '../../lib/tasks';
 import { WeekdayPicker } from '../../components/WeekdayPicker';
+import { t } from '../../lib/i18n';
 
 export default function NewTask() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function NewTask() {
     if (!name.trim()) return;
     const n = parseInt(interval, 10);
     if (!Number.isFinite(n) || n <= 0) {
-      Alert.alert('Invalid interval');
+      Alert.alert(t('task.invalid_interval'));
       return;
     }
     setSaving(true);
@@ -45,7 +46,7 @@ export default function NewTask() {
       });
       router.back();
     } catch (e: any) {
-      Alert.alert('Failed', e.message);
+      Alert.alert(t('task.save_failed'), e.message);
     } finally {
       setSaving(false);
     }
@@ -53,29 +54,29 @@ export default function NewTask() {
 
   return (
     <View style={styles.root}>
-      <Text style={styles.h}>New Task</Text>
+      <Text style={styles.h}>{t('task.new_title')}</Text>
 
-      <Text style={styles.label}>Name</Text>
+      <Text style={styles.label}>{t('task.name')}</Text>
       <TextInput
         style={styles.input}
         value={name}
         onChangeText={setName}
-        placeholder="e.g. Stretching"
+        placeholder={t('task.name_placeholder')}
         placeholderTextColor="#8E8E93"
         autoFocus
       />
 
-      <Text style={styles.label}>Notification message</Text>
+      <Text style={styles.label}>{t('task.notif_message')}</Text>
       <TextInput
         style={[styles.input, styles.multiline]}
         value={notifText}
         onChangeText={setNotifText}
-        placeholder="e.g. Don't forget to do your yoga!"
+        placeholder={t('task.notif_placeholder')}
         placeholderTextColor="#8E8E93"
         multiline
       />
 
-      <Text style={styles.label}>Start time (HH:MM, 24h)</Text>
+      <Text style={styles.label}>{t('task.start_time_hint')}</Text>
       <TextInput
         style={styles.input}
         value={startTime}
@@ -86,14 +87,14 @@ export default function NewTask() {
         type="time"
       />
 
-      <Text style={styles.label}>Repeat on</Text>
+      <Text style={styles.label}>{t('task.repeat_on')}</Text>
       <View style={styles.modeRow}>
         <Pressable
           style={[styles.mode, repeatMode === 'daily' && styles.modeOn]}
           onPress={() => setRepeatMode('daily')}
         >
           <Text style={[styles.modeText, repeatMode === 'daily' && styles.modeTextOn]}>
-            Every day
+            {t('task.every_day')}
           </Text>
         </Pressable>
         <Pressable
@@ -101,7 +102,7 @@ export default function NewTask() {
           onPress={() => setRepeatMode('custom')}
         >
           <Text style={[styles.modeText, repeatMode === 'custom' && styles.modeTextOn]}>
-            Custom
+            {t('task.custom')}
           </Text>
         </Pressable>
       </View>
@@ -111,7 +112,7 @@ export default function NewTask() {
         </View>
       )}
 
-      <Text style={styles.label}>Repeat every</Text>
+      <Text style={styles.label}>{t('task.repeat_every')}</Text>
       <View style={styles.repeatRow}>
         <TextInput
           style={[styles.input, styles.repeatInput]}
@@ -123,18 +124,22 @@ export default function NewTask() {
           style={[styles.unit, unit === 'minutes' && styles.unitOn]}
           onPress={() => setUnit('minutes')}
         >
-          <Text style={[styles.unitText, unit === 'minutes' && styles.unitTextOn]}>min</Text>
+          <Text style={[styles.unitText, unit === 'minutes' && styles.unitTextOn]}>
+            {t('task.min')}
+          </Text>
         </Pressable>
         <Pressable
           style={[styles.unit, unit === 'hours' && styles.unitOn]}
           onPress={() => setUnit('hours')}
         >
-          <Text style={[styles.unitText, unit === 'hours' && styles.unitTextOn]}>hr</Text>
+          <Text style={[styles.unitText, unit === 'hours' && styles.unitTextOn]}>
+            {t('task.hr')}
+          </Text>
         </Pressable>
       </View>
 
       <Pressable style={styles.save} onPress={save} disabled={saving}>
-        <Text style={styles.saveText}>{saving ? 'Saving…' : 'Save'}</Text>
+        <Text style={styles.saveText}>{saving ? t('task.saving') : t('task.save')}</Text>
       </Pressable>
     </View>
   );
