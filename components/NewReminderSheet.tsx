@@ -48,6 +48,7 @@ export function NewReminderSheet({ onClose, onCreated }: Props) {
 
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const titleRef = useRef<TextInput>(null);
+  const scrollY = useRef(0);
 
   useEffect(() => {
     let prevOverflow = '';
@@ -95,7 +96,11 @@ export function NewReminderSheet({ onClose, onCreated }: Props) {
 
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+      onMoveShouldSetPanResponder: (_e, g) => {
+        // Only capture downward drags that are clearly vertical, and only
+        // when the ScrollView is at the top so we don't fight its scrolling.
+        return g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx) && scrollY.current <= 0;
+      },
       onPanResponderMove: (_e, g) => {
         const next = Math.max(0, g.dy);
         translateY.setValue(next);
@@ -154,8 +159,11 @@ export function NewReminderSheet({ onClose, onCreated }: Props) {
   const content = (
     <View style={styles.root} pointerEvents="box-none">
       <Pressable style={styles.backdrop} onPress={() => animateClose()} />
-      <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-        <View style={styles.grabberWrap} {...panResponder.panHandlers}>
+      <Animated.View
+        style={[styles.sheet, { transform: [{ translateY }] }]}
+        {...panResponder.panHandlers}
+      >
+        <View style={styles.grabberWrap}>
           <View style={styles.grabber} />
         </View>
 
@@ -170,6 +178,10 @@ export function NewReminderSheet({ onClose, onCreated }: Props) {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={(e) => {
+            scrollY.current = e.nativeEvent.contentOffset.y;
+          }}
         >
           <View style={styles.card}>
             <TextInput
